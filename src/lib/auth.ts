@@ -46,18 +46,29 @@ export const authOptions: NextAuthOptions = {
         token.email = profile.email;
         token.name = profile.name;
         token.picture = (profile as { picture?: string }).picture;
+      }
 
-        // Get user ID from database
-        if (profile.email) {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: profile.email },
-            select: { id: true },
+      // Always ensure we have the userId (fetch from DB if missing)
+      if (!token.userId && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: { id: true },
+        });
+        if (dbUser) {
+          token.userId = dbUser.id;
+        } else {
+          // Create user if they don't exist
+          const newUser = await prisma.user.create({
+            data: {
+              email: token.email as string,
+              name: token.name as string,
+              image: token.picture as string,
+            },
           });
-          if (dbUser) {
-            token.userId = dbUser.id;
-          }
+          token.userId = newUser.id;
         }
       }
+
       return token;
     },
     async session({ session, token }) {
