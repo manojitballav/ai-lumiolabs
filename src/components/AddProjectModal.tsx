@@ -22,12 +22,13 @@ export default function AddProjectModal({
     subdomain: "",
     repoUrl: "",
     branch: "main",
+    projectType: "NODEJS" as "NODEJS" | "PYTHON" | "STATIC",
     buildCmd: "",
     startCmd: "",
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -71,6 +72,7 @@ export default function AddProjectModal({
         subdomain: "",
         repoUrl: "",
         branch: "main",
+        projectType: "NODEJS",
         buildCmd: "",
         startCmd: "",
       });
@@ -231,6 +233,34 @@ export default function AddProjectModal({
                   className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="main"
                 />
+              </div>
+
+              {/* Project Type */}
+              <div>
+                <label
+                  htmlFor="projectType"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Project Type
+                </label>
+                <select
+                  id="projectType"
+                  name="projectType"
+                  value={formData.projectType}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="NODEJS">Node.js</option>
+                  <option value="PYTHON">Python</option>
+                  <option value="STATIC">Static Site</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.projectType === "STATIC"
+                    ? "Static HTML/CSS/JS served via nginx"
+                    : formData.projectType === "PYTHON"
+                      ? "Python app with requirements.txt"
+                      : "Node.js app with package.json"}
+                </p>
               </div>
 
               {/* Build & Start Commands */}

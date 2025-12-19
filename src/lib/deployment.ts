@@ -246,25 +246,29 @@ ARG START_CMD="python app.py"
 CMD $START_CMD
 `,
 
-  STATIC: `# Static site Dockerfile
-FROM nginx:alpine
-
-# Copy static files
-COPY . /usr/share/nginx/html
-
-# Configure nginx for Cloud Run
-ARG PORT=8080
-RUN echo 'server { \\
-    listen $PORT; \\
-    location / { \\
-        root /usr/share/nginx/html; \\
-        index index.html; \\
-        try_files $uri $uri/ /index.html; \\
-    } \\
-}' | sed "s/\\$PORT/$PORT/g" > /etc/nginx/conf.d/default.conf
-
-EXPOSE $PORT
-
-CMD ["nginx", "-g", "daemon off;"]
-`,
+  STATIC: "# Static site Dockerfile\n\
+FROM nginx:alpine\n\
+\n\
+ARG PORT=8080\n\
+\n\
+# Copy static files\n\
+COPY . /usr/share/nginx/html\n\
+\n\
+# Remove default nginx config and create custom one\n\
+RUN rm /etc/nginx/conf.d/default.conf\n\
+\n\
+# Create nginx config that listens on the specified port\n\
+RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \\\n\
+    echo '    listen '\"$PORT\"';' >> /etc/nginx/conf.d/default.conf && \\\n\
+    echo '    server_name _;' >> /etc/nginx/conf.d/default.conf && \\\n\
+    echo '    root /usr/share/nginx/html;' >> /etc/nginx/conf.d/default.conf && \\\n\
+    echo '    index index.html index.htm;' >> /etc/nginx/conf.d/default.conf && \\\n\
+    echo '    location / {' >> /etc/nginx/conf.d/default.conf && \\\n\
+    echo '        try_files $uri $uri/ /index.html;' >> /etc/nginx/conf.d/default.conf && \\\n\
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \\\n\
+    echo '}' >> /etc/nginx/conf.d/default.conf\n\
+\n\
+EXPOSE $PORT\n\
+\n\
+CMD [\"nginx\", \"-g\", \"daemon off;\"]\n",
 };

@@ -66,6 +66,7 @@ export default function ProjectDetails({
     subdomain: project.subdomain,
     repoUrl: project.repoUrl || "",
     branch: project.branch,
+    projectType: project.projectType,
     buildCmd: project.buildCmd || "",
     startCmd: project.startCmd || "",
   });
@@ -74,7 +75,7 @@ export default function ProjectDetails({
   const projectUrl = `https://${project.subdomain}.lumiolabs.in`;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -301,47 +302,72 @@ export default function ProjectDetails({
             Build Configuration
           </h2>
           {isEditing ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">
-                  Build Command
+                  Project Type
                 </label>
-                <input
-                  type="text"
-                  name="buildCmd"
-                  value={formData.buildCmd}
+                <select
+                  name="projectType"
+                  value={formData.projectType}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
-                  placeholder="npm run build"
-                />
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="NODEJS">Node.js</option>
+                  <option value="PYTHON">Python</option>
+                  <option value="STATIC">Static Site</option>
+                </select>
               </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">
-                  Start Command
-                </label>
-                <input
-                  type="text"
-                  name="startCmd"
-                  value={formData.startCmd}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
-                  placeholder="npm start"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Build Command
+                  </label>
+                  <input
+                    type="text"
+                    name="buildCmd"
+                    value={formData.buildCmd}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
+                    placeholder={formData.projectType === "STATIC" ? "Not needed for static sites" : "npm run build"}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Start Command
+                  </label>
+                  <input
+                    type="text"
+                    name="startCmd"
+                    value={formData.startCmd}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
+                    placeholder={formData.projectType === "STATIC" ? "Not needed for static sites" : "npm start"}
+                  />
+                </div>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               <div>
-                <p className="text-xs text-gray-500 mb-1">Build Command</p>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                  {project.buildCmd || "Not set"}
-                </code>
+                <p className="text-xs text-gray-500 mb-1">Project Type</p>
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
+                  {project.projectType === "NODEJS" ? "Node.js" : project.projectType === "PYTHON" ? "Python" : "Static Site"}
+                </span>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Start Command</p>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                  {project.startCmd || "Not set"}
-                </code>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Build Command</p>
+                  <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                    {project.buildCmd || "Not set"}
+                  </code>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Start Command</p>
+                  <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                    {project.startCmd || "Not set"}
+                  </code>
+                </div>
               </div>
             </div>
           )}
