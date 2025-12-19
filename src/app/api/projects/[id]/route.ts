@@ -159,6 +159,14 @@ export async function DELETE(
       );
     }
 
+    // Only allow deletion of projects in PENDING (draft) state
+    if (existingProject.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "Only draft projects can be deleted. Stop the project first if it's deployed." },
+        { status: 400 }
+      );
+    }
+
     await prisma.project.delete({
       where: { id },
     });
