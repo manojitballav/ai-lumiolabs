@@ -8,33 +8,26 @@ import { prisma } from "@/lib/prisma";
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
 
-  // Redirect to home if not authenticated
   if (!session) {
     redirect("/");
   }
 
-  // Fetch all projects
-  const projects = await prisma.project.findMany({
+  const subdomains = await prisma.subdomainMapping.findMany({
     include: {
       owner: {
-        select: {
-          name: true,
-        },
+        select: { name: true, email: true },
       },
     },
-    orderBy: {
-      updatedAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
   });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <DashboardContent
-          projects={JSON.parse(JSON.stringify(projects))}
-          userEmail={session.user?.email || ""}
+          subdomains={JSON.parse(JSON.stringify(subdomains))}
+          userId={session.user?.id || ""}
         />
       </main>
     </div>

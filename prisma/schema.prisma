@@ -1,4 +1,4 @@
-// Prisma schema for AI Project Hosting Platform (lumiolabs.in)
+// Prisma schema for Subdomain Mapping Platform (lumiolabs.in)
 
 generator client {
   provider = "prisma-client-js"
@@ -38,16 +38,16 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String             @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?            @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
-  projects      Project[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  subdomains    SubdomainMapping[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }
 
 model VerificationToken {
@@ -58,88 +58,15 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Project model for AI projects
-model Project {
-  id              String         @id @default(cuid())
-  name            String
-  description     String?
-  subdomain       String         @unique
-  repoUrl         String?
-  branch          String         @default("main")
-  buildCmd        String?
-  startCmd        String?
-  envVars         Json?
-  status          Status         @default(PENDING)
-  projectType     ProjectType    @default(NODEJS)
-  port            Int            @default(8080)
-  cloudRunService String?
-  lastDeployedAt  DateTime?
-  ownerId         String
-  owner           User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  deployments     Deployment[]
-  webhookConfig   WebhookConfig?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-}
-
-enum Status {
-  PENDING
-  BUILDING
-  DEPLOYED
-  FAILED
-  STOPPED
-}
-
-enum ProjectType {
-  NODEJS
-  PYTHON
-  STATIC
-}
-
-// Deployment tracking model
-model Deployment {
-  id            String           @id @default(cuid())
-  projectId     String
-  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  version       Int
-  commitHash    String?
-  commitMessage String?
-  branch        String
-  status        DeploymentStatus @default(QUEUED)
-  triggeredBy   String
-  buildLogs     String?          @db.Text
-  errorMessage  String?          @db.Text
-  buildId       String?
-  imageUrl      String?
-  cloudRunUrl   String?
-  startedAt     DateTime?
-  completedAt   DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  @@index([projectId, createdAt])
-}
-
-enum DeploymentStatus {
-  QUEUED
-  CLONING
-  BUILDING
-  PUSHING
-  DEPLOYING
-  LIVE
-  FAILED
-  CANCELLED
-}
-
-// GitHub webhook configuration
-model WebhookConfig {
-  id         String   @id @default(cuid())
-  projectId  String   @unique
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  webhookId  String?
-  secret     String
-  enabled    Boolean  @default(true)
-  autoDeploy Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+// Simple subdomain to URL mapping
+model SubdomainMapping {
+  id        String   @id @default(cuid())
+  name      String
+  subdomain String   @unique
+  targetUrl String
+  isActive  Boolean  @default(true)
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
