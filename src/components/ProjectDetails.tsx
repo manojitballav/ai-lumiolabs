@@ -4,8 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import EnvVarsEditor from "./EnvVarsEditor";
+import DeployButton from "./DeployButton";
+import DeploymentHistory from "./DeploymentHistory";
+import DeploymentLogs from "./DeploymentLogs";
 
 type ProjectStatus = "PENDING" | "BUILDING" | "DEPLOYED" | "FAILED" | "STOPPED";
+type ProjectType = "NODEJS" | "PYTHON" | "STATIC";
 
 interface Project {
   id: string;
@@ -18,6 +22,9 @@ interface Project {
   startCmd: string | null;
   envVars: Record<string, string> | null;
   status: ProjectStatus;
+  projectType: ProjectType;
+  port: number;
+  lastDeployedAt: string | null;
   createdAt: string;
   updatedAt: string;
   owner: {
@@ -391,34 +398,118 @@ export default function ProjectDetails({
         </div>
       </div>
 
-      {/* Deployment Notice */}
-      <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <div className="flex items-start gap-3">
-          <svg
-            className="h-5 w-5 text-amber-500 mt-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-            />
-          </svg>
+      {/* Deployment Section */}
+      {isOwner && (
+        <DeploymentSection project={project} />
+      )}
+    </div>
+  );
+}
+
+// Deployment section component
+function DeploymentSection({ project }: { project: Project }) {
+  const [activeDeploymentId, setActiveDeploymentId] = useState<string | null>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const canDeploy = project.repoUrl && project.status !== "BUILDING";
+
+  const handleDeployStart = () => {
+    setDeployError(null);
+  };
+
+  const handleDeploySuccess = (deploymentId: string) => {
+    setActiveDeploymentId(deploymentId);
+  };
+
+  const handleDeployError = (error: string) => {
+    setDeployError(error);
+  };
+
+  const handleLogsClose = () => {
+    setActiveDeploymentId(null);
+    router.refresh();
+  };
+
+  return (
+    <div className="mt-6 space-y-6">
+      {/* Deploy Button Section */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-amber-800">
-              Deployment Pipeline Coming Soon
-            </h3>
-            <p className="mt-1 text-sm text-amber-700">
-              Automatic deployment from Git repositories will be available in
-              Phase 3. For now, project metadata is saved and ready for when the
-              deployment infrastructure is set up.
+            <h3 className="font-medium text-gray-900">Deployment</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              {project.lastDeployedAt
+                ? `Last deployed ${formatRelativeTime(project.lastDeployedAt)}`
+                : "Never deployed"}
             </p>
           </div>
+          <DeployButton
+            projectId={project.id}
+            disabled={!canDeploy}
+            branch={project.branch}
+            onDeployStart={handleDeployStart}
+            onDeploySuccess={handleDeploySuccess}
+            onDeployError={handleDeployError}
+          />
         </div>
+
+        {!project.repoUrl && (
+          <p className="mt-3 text-sm text-amber-600">
+            Configure a Git repository to enable deployments.
+          </p>
+        )}
+
+        {deployError && (
+          <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            {deployError}
+          </div>
+        )}
+      </div>
+
+      {/* Active Deployment Logs */}
+      {activeDeploymentId && (
+        <DeploymentLogs
+          projectId={project.id}
+          deploymentId={activeDeploymentId}
+          onClose={handleLogsClose}
+        />
+      )}
+
+      {/* Deployment History */}
+      <DeploymentHistory
+        projectId={project.id}
+        onSelectDeployment={setActiveDeploymentId}
+      />
+
+      {/* Webhook Info */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <h3 className="font-medium text-gray-900 mb-3">GitHub Webhook</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Configure a webhook in your GitHub repository to enable automatic deployments on push.
+        </p>
+        <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm">
+          <p className="text-gray-500 text-xs mb-1">Webhook URL:</p>
+          <p className="text-gray-900 break-all">
+            https://lumiolabs.in/api/webhooks/github
+          </p>
+        </div>
+        <p className="mt-3 text-xs text-gray-400">
+          Content type: application/json • Secret: Configure GITHUB_WEBHOOK_SECRET in your environment
+        </p>
       </div>
     </div>
   );
+}
+
+function formatRelativeTime(date: string): string {
+  const now = new Date();
+  const then = new Date(date);
+  const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+  return then.toLocaleDateString();
 }
